@@ -7,7 +7,7 @@ def generate_users(num_users):
     for i in range(num_users):
         user = {
             'id': i + 1,
-            'workout_frequency': random.randint(0, 20),  # Start with few workouts per week
+            'workout_chance': random.randint(0, 20),  # Start with few workouts per week
             'workouts_this_week': 0,
             'nudges_received': 0,
             'encouragements_received': 0,
@@ -47,8 +47,8 @@ def simulate_app_influence(users, num_days=84):  # for now we will plot it over 
             user['workout_chance'] = max(0, min(100, user['workout_chance']))  # Limit workout frequency to 1-7 days per week
 
     # Calculate moving average of workout frequency (for long term graphs)
-    #for i in range(len(workout_frequency_history)):
-    #    workout_frequency_history[i] = moving_average(workout_frequency_history[i])
+    for i in range(len(workout_frequency_history)):
+        workout_frequency_history[i] = moving_average(workout_frequency_history[i])
 
     return workout_frequency_history
 
