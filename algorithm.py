@@ -27,7 +27,7 @@ def generate_users(names, traits, starting_level):
             'workouts_this_week': 0,
             'nudges_received': 0,
             'encouragements_received': 0,
-            'nudge_chance' : 0.5,
+            'nudge_chance' : 1,
         }
         users.append(user)
     return users
@@ -54,7 +54,7 @@ def generate_generic_users(nr_users):
             'traits': [],
             'workouts_this_week': 0,
             'nudges_received': 0,
-            'nudge_chance' : 0.5,
+            'nudge_chance' : 1,
         }
         users.append(user)
     return users
@@ -69,14 +69,14 @@ def moving_average(lst, window_size=3):
 def nudge(user, workout_frequency_history, day):
     #Every day, check if user is behind or ahead of average
     user_mean = np.mean([workout for user_workouts in workout_frequency_history.values() for workout in user_workouts])
-    if user['workouts_this_week'] < user_mean/(7 - (day%7)):  # User is behind, send nudge
+    if user['workouts_this_week'] <= ((2.5+(user_mean))/2)/(7 - (day%7)):  # User is behind, send nudge
         user['nudge_chance'] *= 1.5
     
     if  user['nudge_chance'] > random.randint(0,100):  # User has a chance of being nudged
         user['nudges_received'] += 1
         user['nudge_chance'] *= 0.5
-        user['workout_chance'] += np.random.normal(20, 50)  # Increase workout chance in response to nudge
-        user['motivation'] += np.random.normal(2, 6)
+        user['workout_chance'] += np.random.normal(20, 25)  # Increase workout chance in response to nudge
+        user['motivation'] += np.random.normal(1.5, 3)
         user['workout_chance'] = max(0, min(100, user['workout_chance']))  # Limit workout frequency
         user['motivation'] = max(0, min(100, user['motivation']))  # Limit user motivation
 
@@ -95,7 +95,7 @@ def weekly_feedback(user, workout_frequency_history):
 
 def check_traits(user, day):
     if 'enthusiastic' in user['traits']:
-        user['workout_chance'] += np.random.normal(60, 20)/np.sqrt(day+1)
+        user['workout_chance'] += np.random.normal(80, 10)/np.sqrt(day+1)
     if 'unmotivated' in user['traits']:
         user['motivation'] += np.random.normal(-0.5, 0.5)
     if 'busy' in user['traits']:
@@ -124,7 +124,7 @@ def simulate_normal_behaviour(users, num_days=84):  # for now we will plot it ov
             if day % 7 == 6:  # End of the week
                 workout_frequency_history[user['name']].append(user['workouts_this_week'])
                 user['workouts_this_week'] = 0  # Reset for the next week
-                user['motivation'] += np.random.normal(0, 1)
+                user['motivation'] += np.random.normal(-0.05, 2)
     return workout_frequency_history
 
 
@@ -150,7 +150,7 @@ def simulate_app_influence(users, num_days=84):  # for now we will plot it over 
                 nudge_frequency_history[user['name']].append(user['nudges_received'])
                 user['workouts_this_week'] = 0  # Reset for the next week
                 user['nudges_received'] = 0  # Reset for the next week
-                user['motivation'] += np.random.normal(0, 1)
+                user['motivation'] += np.random.normal(-0.05, 2)
     return workout_frequency_history, nudge_frequency_history
 
 
@@ -182,13 +182,14 @@ def average_simulations(simulation_type, users, num_days=84, runs=4):
 
 '''Simulation with generic users'''
 users = generate_generic_users(100)
-unassisted_workout_history = simulate_normal_behaviour(users, 24 * 7)
+unassisted_workout_history = simulate_normal_behaviour(users, 26 * 7)
 users = generate_generic_users(100)
-assisted_workout_history, nudge_frequency_history = simulate_app_influence(users, 24 * 7)
+assisted_workout_history, nudge_frequency_history = simulate_app_influence(users, 26 * 7)
 
 # Create three subplots
-fig, ([generic_graph, generic_nudge_graph], [assisted_persona_graph, persona_nudge_graph], [persona_graph, empty]) = plt.subplots(3,2)
-empty.axis('off')
+fig, ([generic_graph, generic_nudge_graph]) = plt.subplots(1,2)
+fig2, ([assisted_persona_graph, persona_nudge_graph], [persona_graph, empty]) = plt.subplots(2,2)
+empty.remove()
 # Convert the dictionary values to lists
 unassisted_workout_list = list(unassisted_workout_history.values())
 assisted_workout_list = list(assisted_workout_history.values())
@@ -199,11 +200,14 @@ assisted_workout_mean = np.mean(assisted_workout_list, axis=0)
 nudge_frequency_mean = np.mean(nudge_frequency_list, axis=0)
 
 # Plot the mean workout frequency history on the subplots
+generic_graph.set_title('Workout frequency for the average of 100 generic students')
 generic_graph.plot(unassisted_workout_mean, label='Unassisted')
 generic_graph.plot(assisted_workout_mean, label='Assisted')
+generic_graph.set_xlabel('Week')
 generic_graph.set_ylabel('Workouts per week')
 generic_graph.set_ylim([0, 7])
 generic_graph.legend()
+generic_nudge_graph.set_title('Average nudge frequency for 100 generic students')
 generic_nudge_graph.plot(nudge_frequency_mean, label='Nudge frequency')
 generic_nudge_graph.set_xlabel('Week')
 generic_nudge_graph.set_ylabel('Nudges per week')
@@ -214,22 +218,25 @@ generic_nudge_graph.legend()
 #List of user names and habits
 names = ['Liam', 'Matteo', 'Alex']
 traits = [['busy'],['enthusiastic'],['unmotivated']]
-starting_level = [40, 15, 0]
+starting_level = [40, 10, 0]
 users = generate_users(names, traits, starting_level)
 
-unassisted_persona_history, _ = average_simulations('normal', users, 24 * 7, 5)
+unassisted_persona_history, _ = average_simulations('normal', users, 26 * 7, 5)
 for name in unassisted_persona_history:
     persona_graph.plot(unassisted_persona_history[name], label=name)
+persona_graph.set_title('Workout frequency for each persona normally')
+persona_graph.set_xlabel('Week')
 persona_graph.set_ylabel('Workouts per week')
 persona_graph.set_ylim([0, 7])
 persona_graph.legend()
 
 users = generate_users(names, traits, starting_level)
-assisted_persona_history, nudge_persona_history = average_simulations('app', users, 24 * 7, 5)
+assisted_persona_history, nudge_persona_history = average_simulations('app', users, 26 * 7, 5)
 
 # Plot workout frequency history for each user on the first subplot
 for name in assisted_persona_history:
     assisted_persona_graph.plot(assisted_persona_history[name], label=name)
+assisted_persona_graph.set_title('Workout frequency for each persona with app assistance')
 assisted_persona_graph.set_ylabel('Workouts per week')
 assisted_persona_graph.set_ylim([0, 7])
 assisted_persona_graph.legend()
@@ -238,6 +245,7 @@ assisted_persona_graph.legend()
 # Plot nudge frequency history for each user on the second subplot
 for name in nudge_persona_history:
     persona_nudge_graph.plot(nudge_persona_history[name], label=name)
+persona_nudge_graph.set_title('Nudge frequency for each persona')
 persona_nudge_graph.set_xlabel('Week')
 persona_nudge_graph.set_ylabel('Nudges per week')
 persona_nudge_graph.legend()
