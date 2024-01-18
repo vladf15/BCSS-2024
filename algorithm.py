@@ -94,14 +94,17 @@ def weekly_feedback(user, workout_frequency_history):
 '''
 
 def check_traits(user, day):
-    if 'motivated' in user['traits']:
-        user['motivation'] += np.random.normal(1, 1)/(day+1)
+    if 'enthusiastic' in user['traits']:
+        user['workout_chance'] += np.random.normal(60, 20)/np.sqrt(day+1)
     if 'unmotivated' in user['traits']:
         user['motivation'] += np.random.normal(-0.5, 0.5)
     if 'busy' in user['traits']:
         if(day%7 < 5):
-            user['workout_chance'] += np.random.normal(-10, 15)
-            user['motivation'] += np.random.normal(-0.01, 1)
+            user['workout_chance'] += np.random.normal(-10, 30)
+            user['motivation'] += np.random.normal(-0.05, 1)
+        else:
+            user['workout_chance'] += np.random.normal(10, 30)
+            user['motivation'] += np.random.normal(0.1, 0.5)
         
     user['workout_chance'] = max(0, min(100, user['workout_chance']))  # Limit workout frequency
     user['motivation'] = max(0, min(100, user['motivation']))  # Limit user motivation
@@ -210,8 +213,8 @@ generic_nudge_graph.legend()
 '''Simulation with personas'''
 #List of user names and habits
 names = ['Liam', 'Matteo', 'Alex']
-traits = [['busy'],['busy', 'motivated'],['unmotivated']]
-starting_level = [40, 10, 0]
+traits = [['busy'],['enthusiastic'],['unmotivated']]
+starting_level = [40, 15, 0]
 users = generate_users(names, traits, starting_level)
 
 unassisted_persona_history, _ = average_simulations('normal', users, 24 * 7, 5)
