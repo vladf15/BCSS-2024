@@ -68,14 +68,15 @@ def moving_average(lst, window_size=3):
 
 def nudge(user, workout_frequency_history, day):
     #Every day, check if user is behind or ahead of average
-    if user['workouts_this_week'] < np.mean([workout for user_workouts in workout_frequency_history.values() for workout in user_workouts])/(7 - (day%7)):  # User is behind, send nudge
-        user['nudge_chance'] *= 1.2
-
-    if user['nudge_chance'] > random.randint(0,100) and user['nudges_received'] < 5:  # User has a chance of being nudged
+    user_mean = np.mean([workout for user_workouts in workout_frequency_history.values() for workout in user_workouts])
+    if user['workouts_this_week'] < user_mean/(7 - (day%7)):  # User is behind, send nudge
+        user['nudge_chance'] *= 1.5
+    
+    if  user['nudge_chance'] > random.randint(0,100):  # User has a chance of being nudged
         user['nudges_received'] += 1
         user['nudge_chance'] *= 0.5
-        user['workout_chance'] += np.random.normal(15, 30)  # Increase workout frequency in response to nudge
-        user['motivation'] += np.random.normal(3, 8)
+        user['workout_chance'] += np.random.normal(20, 50)  # Increase workout chance in response to nudge
+        user['motivation'] += np.random.normal(2, 6)
         user['workout_chance'] = max(0, min(100, user['workout_chance']))  # Limit workout frequency
         user['motivation'] = max(0, min(100, user['motivation']))  # Limit user motivation
 
@@ -238,7 +239,6 @@ persona_nudge_graph.set_xlabel('Week')
 persona_nudge_graph.set_ylabel('Nudges per week')
 persona_nudge_graph.legend()
 
-# Plot the mean nudge frequency history on the subplot
 
 # Show the plot
 plt.show()
